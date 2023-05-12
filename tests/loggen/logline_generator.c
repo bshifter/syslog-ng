@@ -37,6 +37,7 @@ static int pos_timestamp1 = 0;
 static int pos_timestamp2 = 0;
 static int pos_seq = 0;
 static int pos_thread_id = 0;
+static GMutex generator_lock;
 
 int
 prepare_log_line_template(int syslog_proto, int framing, int message_length, char *sdata_value)
@@ -93,11 +94,13 @@ prepare_log_line_template(int syslog_proto, int framing, int message_length, cha
   line_buf_template[hdr_len + message_length - 1] = '\n';
   line_buf_template[hdr_len + message_length] = 0;
 
+  g_mutex_init(&generator_lock);
   return linelen;
 }
 
 int
-generate_log_line(char *buffer, int buffer_length, int syslog_proto, int thread_id, unsigned long seq)
+generate_log_line(char *buffer, int buffer_length, int syslog_proto, int thread_id, unsigned long rate,
+                  unsigned long seq)
 {
   if (!buffer)
     {
@@ -110,16 +113,31 @@ generate_log_line(char *buffer, int buffer_length, int syslog_proto, int thread_
 
   /* create time stamps */
   struct timeval now;
-  gettimeofday(&now, NULL);
+  static struct timeval ts_formatted = {0};
   struct tm tm;
-  char stamp[32];
-  localtime_r(&now.tv_sec, &tm);
-  int len = strftime(stamp, sizeof(stamp), "%Y-%m-%dT%H:%M:%S", &tm);
+  static char stamp[32] = {0};
+  static int len;
+
+  int check_seq = rate / 10;
+  if (check_seq > 1000)
+    check_seq = 1000;
+  if (check_seq <= 1 || (seq % check_seq) == 0)
+    {
+      g_mutex_lock(&generator_lock);
+      gettimeofday(&now, NULL);
+      if (now.tv_sec != ts_formatted.tv_sec)
+        {
+          localtime_r(&now.tv_sec, &tm);
+          len = strftime(stamp, sizeof(stamp), "%Y-%m-%dT%H:%M:%S", &tm);
+          ts_formatted = now;
+
+          if (syslog_proto)
+            format_timezone_offset_with_colon(stamp, sizeof(stamp), &tm);
+        }
+      g_mutex_unlock(&generator_lock);
+    }
+
   memcpy(&buffer[pos_timestamp2], stamp, len);
-
-  if (syslog_proto)
-    format_timezone_offset_with_colon(stamp, sizeof(stamp), &tm);
-
   memcpy(&buffer[pos_timestamp1], stamp, strlen(stamp));
 
   /* print sequence number to logline */

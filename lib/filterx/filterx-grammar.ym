@@ -34,6 +34,7 @@
 #include "filterx/expr-message-ref.h"
 #include "filterx/expr-template.h"
 #include "filterx/expr-boolalg.h"
+#include "filterx/expr-builtin.h"
 #include "filterx/expr-assign.h"
 #include "filterx/expr-getattr.h"
 #include "filterx/expr-setattr.h"
@@ -45,6 +46,8 @@
 #include "filterx/object-string.h"
 #include "filterx/filterx-config.h"
 
+/* legacy filters */
+#include "filter/filter-netmask.h"
 #include "template/templates.h"
 
 FilterXExpr *
@@ -83,6 +86,7 @@ construct_template_expr(LogTemplate *template)
 %type <node> expr_value
 %type <node> literal
 %type <ptr> literal_object
+%type <node> builtin
 %type <node> lvalue
 %type <ptr> template
 %type <ptr> json_object
@@ -131,6 +135,7 @@ expr
 
 expr_value
 	: literal
+	| builtin				{ $$ = filterx_builtin_filter_new($1); }
 	| lvalue				{ $$ = $1; }
 	| template				{ $$ = construct_template_expr($1); }
 	| json_object                           { $$ = filterx_json_expr_new($1); }
@@ -165,6 +170,10 @@ template
             $$ = template;
           }
 	;
+
+
+builtin
+	: KW_NETMASK '(' string ')'    		{ $$ = filter_netmask_new($3); free($3); }
 
 json_object
 	: '{' json_object_values '}'            { $$ = $2; }

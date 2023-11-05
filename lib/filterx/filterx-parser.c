@@ -43,6 +43,8 @@ static CfgLexerKeyword filterx_keywords[] =
   { "false",              KW_FALSE },
   { "null",               KW_NULL },
 
+  { "netmask",            KW_NETMASK },
+
   { NULL }
 };
 

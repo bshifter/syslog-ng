@@ -143,7 +143,11 @@ static FilterXObject *
 _unmarshal(FilterXObject *s)
 {
   FilterXMessageValue *self = (FilterXMessageValue *) s;
-  return _unmarshal_repr(self->repr, self->repr_len, self->type);
+
+  FilterXObject *object = _unmarshal_repr(self->repr, self->repr_len, self->type);
+  msg_debug("unmarshal-value",
+            evt_tag_printf("value", "%p = %p", self, object));
+  return object;
 }
 
 /* NOTE: the caller must ensure that repr lives as long as the constructed object, avoids copying */

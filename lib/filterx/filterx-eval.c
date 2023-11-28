@@ -50,6 +50,7 @@ _evaluate_statement(FilterXExpr *expr)
   msg_debug("FILTERX",
             evt_tag_printf("expr", "%p", expr),
             evt_tag_printf("object", "%p", res),
+            evt_tag_printf("object_type", "%p", res->type),
             evt_tag_str("value", buf->str),
             evt_tag_str("type", log_msg_value_type_to_str(t)));
   success = filterx_object_truthy(res);

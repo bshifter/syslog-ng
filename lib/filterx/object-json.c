@@ -131,6 +131,9 @@ _getattr(FilterXObject *s, const gchar *attr_name)
   if (!json_object_object_get_ex(self->object, attr_name, &attr_value))
     return FALSE;
 
+msg_debug("filterx-getattr",
+          evt_tag_printf("values", "[%p]%p.%s = %p", self, self->object, attr_name, attr_value));
+
   return _convert_json_to_object_cached(self, attr_value);
 }
 
@@ -149,6 +152,8 @@ _setattr(FilterXObject *s, const gchar *attr_name, FilterXObject *new_value)
   filterx_json_associate_cached_object(attr_value, new_value);
   filterx_object_unref(new_value);
 
+msg_debug("filterx-setattr",
+          evt_tag_printf("values", "[%p]%p.%s = %p", self, self->object, attr_name, attr_value));
   if (json_object_object_add(self->object, attr_name, attr_value) != 0)
     {
       json_object_put(attr_value);

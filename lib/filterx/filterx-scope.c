@@ -46,6 +46,9 @@ filterx_scope_sync_to_message(FilterXScope *self, LogMessage *msg)
       NVHandle handle = GPOINTER_TO_INT(_key);
       FilterXObject *value = (FilterXObject *) _value;
 
+      msg_debug("sync_to_message",
+                evt_tag_printf("value", "[%d]%p", (gint) handle, value));
+
       if (!(value->modified_in_place || value->assigned))
         continue;
       LogMessageValueType t;
